@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgroSense — Портативное устройство для оценки плодородия почвы</title>
+  <!-- Подключение Google Fonts: Inter и JetBrains Mono для показателей прибора -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Подключение Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            agro: {
+              lime: '#C4EB95',
+              limeDark: '#B8E685',
+              limeDeep: '#5F8D2E',
+              cream: '#F7F4EE',
+              creamDark: '#EDE8DD',
+              dark: '#1E221D',
+              darkSoft: '#2B312A',
+              muted: '#575E55',
+            }
+          },
+          boxShadow: {
+            'soft': '0 10px 30px -10px rgba(30, 34, 29, 0.08)',
+            'device': '0 25px 50px -12px rgba(20, 24, 19, 0.45)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Базовые стили и фирменные элементы из презентации */
+    body {
+      background-color: #F7F4EE;
+      color: #1E221D;
+      overflow-x: hidden;
+    }
+
+    /* Точечная разделительная линия как на слайдах презентации */
+    .slide-dots {
+      height: 4px;
+      width: 100%;
+      background-image: radial-gradient(circle, #1E221D 1.6px, transparent 1.7px);
+      background-size: 12px 4px;
+      background-repeat: repeat-x;
+      opacity: 0.55;
+    }
+
+    .slide-dots-light {
+      height: 4px;
+      width: 100%;
+      background-image: radial-gradient(circle, #FFFFFF 1.6px, transparent 1.7px);
+      background-size: 12px 4px;
+      background-repeat: repeat-x;
+      opacity: 0.65;
+    }
+
+    /* Текстура потертого ботанического принта как в слайдах */
+    .botanical-bg {
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* Анимация пульсации акустического импульса */
+    @keyframes pulseRing {
+      0% { transform: scale(0.85); opacity: 0.7; }
+      100% { transform: scale(1.45); opacity: 0; }
+    }
+    .pulse-ring {
+      animation: pulseRing 2.2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+
+    /* Плавный переход экранов прибора */
+    .screen-fade {
+      transition: all 0.28s ease;
+    }
+  </style>
+</head>
+<body class="font-sans antialiased selection:bg-agro-lime selection:text-agro-dark">
+
+  <!-- ========================================================= -->
+  <!-- 1. НАВИГАЦИЯ (Sticky Header)                              -->
+  <!-- ========================================================= -->
+  <header class="sticky top-0 z-50 bg-agro-cream/90 backdrop-blur-md border-b border-agro-dark/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+      <!-- Логотип -->
+      <a href="#top" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-2xl bg-agro-dark text-agro-lime flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 22V10" stroke-linecap="round"/>
+            <path d="M12 14C12 14 7 13 5 8C10 8 12 11 12 14Z" fill="currentColor" fill-opacity="0.25"/>
+            <path d="M12 11C12 11 17 10 19 5C14 5 12 8 12 11Z" fill="currentColor" fill-opacity="0.25"/>
+            <circle cx="12" cy="21" r="1.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <div>
+          <span class="font-extrabold text-xl tracking-tight text-agro-dark block leading-none">AgroSense</span>
+          <span class="text-[11px] font-medium text-agro-muted tracking-wide">Экспресс-анализ почвы</span>
+        </div>
+      </a>
+
+      <!-- Десктопное меню -->
+      <nav class="hidden lg:flex items-center gap-7 text-sm font-medium text-agro-dark/80">
+        <a href="#problem" class="hover:text-agro-dark transition-colors">Проблема</a>
+        <a href="#comparison" class="hover:text-agro-dark transition-colors">Сравнение</a>
+        <a href="#solution" class="hover:text-agro-dark transition-colors">Устройство</a>
+        <a href="#technology" class="hover:text-agro-dark transition-colors">Технология БПФ</a>
+        <a href="#market" class="hover:text-agro-dark transition-colors">Рынок и экономика</a>
+        <a href="#roadmap" class="hover:text-agro-dark transition-colors">Пилот (1 млн ₽)</a>
+      </nav>
+
+      <!-- Кнопка действия и мобильное меню -->
+      <div class="flex items-center gap-3">
+        <a href="#contact" class="hidden sm:inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-agro-dark text-white text-sm font-semibold hover:bg-agro-darkSoft transition-all shadow-sm">
+          Оставить заявку
+        </a>
+        <button id="mobileMenuBtn" aria-label="Открыть меню" class="lg:hidden p-2.5 rounded-xl bg-white border border-agro-dark/15 text-agro-dark hover:bg-agro-lime/40 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Выпадающее мобильное меню -->
+    <div id="mobileMenu" class="hidden lg:hidden bg-agro-cream border-b border-agro-dark/15 px-4 pt-3 pb-5 space-y-2">
+      <a href="#problem" class="block py-2 px-3 rounded-xl hover:bg-agro-lime/50 font-medium">Проблема садоводов</a>
+      <a href="#comparison" class="block py-2 px-3 rounded-xl hover:bg-agro-lime/50 font-medium">Сравнение аналогов</a>
+      <a href="#solution" class="block py-2 px-3 rounded-xl hover:bg-agro-lime/50 font-medium">Решение и 5 параметров</a>
+      <a href="#technology" class="block py-2 px-3 rounded-xl hover:bg-agro-lime/50 font-medium">Технологическая идея (БПФ)</a>
+      <a href="#market" class="block py-2 px-3 rounded-xl hover:bg-agro-lime/50 font-medium">Рынок и юнит-экономика</a>
+      <a href="#roadmap" class="block py-2 px-3 rounded-xl hover:bg-agro-lime/50 font-medium">Дорожная карта пилота</a>
+      <a href="#contact" class="block mt-3 text-center py-3 px-4 rounded-full bg-agro-dark text-white font-semibold">Заказать предзаказ / Связаться</a>
+    </div>
+  </header>
+
+  <!-- ========================================================= -->
+  <!-- 2. HERO-БЛОК (Фирменный лаймовый фон как в 1 слайде)      -->
+  <!-- ========================================================= -->
+  <section id="top" class="relative bg-agro-lime overflow-hidden pt-8 pb-16 sm:pt-12 sm:pb-24">
+    <!-- Декоративные ботанические силуэты (отпечатки листьев и папоротника как в презентации) -->
+    <svg class="botanical-bg absolute -top-12 -left-16 w-80 h-80 sm:w-[460px] sm:h-[460px] text-white opacity-45" viewBox="0 0 400 400" fill="currentColor">
+      <path d="M210,10 C120,25 45,95 25,185 C95,195 165,165 215,115 C255,165 320,185 385,165 C365,85 295,20 210,10 Z"/>
+      <path d="M180,145 C110,165 55,220 45,290 C115,295 180,260 220,205 C265,255 325,275 380,250 C360,185 270,130 180,145 Z" opacity="0.65"/>
+    </svg>
+    <svg class="botanical-bg absolute -bottom-10 left-6 w-64 h-64 sm:w-96 sm:h-96 text-white opacity-55" viewBox="0 0 300 300" fill="currentColor">
+      <!-- Ветвь папоротника -->
+      <path d="M40,290 Q110,180 155,45" stroke="currentColor" stroke-width="4" fill="none"/>
+      <ellipse cx="75" cy="240" rx="28" ry="9" transform="rotate(-35 75 240)"/>
+      <ellipse cx="105" cy="245" rx="26" ry="8" transform="rotate(25 105 245)"/>
+      <ellipse cx="92" cy="195" rx="30" ry="9" transform="rotate(-35 92 195)"/>
+      <ellipse cx="126" cy="200" rx="28" ry="8" transform="rotate(25 126 200)"/>
+      <ellipse cx="112" cy="150" rx="26" ry="8" transform="rotate(-35 112 150)"/>
+      <ellipse cx="142" cy="155" rx="24" ry="8" transform="rotate(25 142 155)"/>
+      <ellipse cx="130" cy="105" rx="22" ry="7" transform="rotate(-35 130 105)"/>
+      <ellipse cx="155" cy="110" rx="20" ry="7" transform="rotate(25 155 110)"/>
+    </svg>
+    <svg class="botanical-bg absolute top-10 -right-12 w-72 h-96 sm:w-[420px] sm:h-[520px] text-white opacity-45" viewBox="0 0 400 500" fill="currentColor">
+      <path d="M320,20 C240,65 190,145 185,235 C265,215 330,150 355,65 Z"/>
+      <path d="M370,180 C285,205 225,275 210,365 C295,355 360,295 390,210 Z"/>
+      <path d="M120,60 C115,145 145,220 205,275 C215,195 185,115 120,60 Z" opacity="0.7"/>
+    </svg>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Верхняя точечная линия -->
+      <div class="slide-dots mb-8"></div>
+
+      <!-- Бейджи поддержки (Слайд 1) -->
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-10">
+        <div class="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-agro-dark text-white text-sm font-semibold shadow-sm">
+          <span class="w-2.5 h-2.5 rounded-full bg-agro-lime animate-pulse"></span>
+          AgroSense • Проект СтС-604708
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 bg-white/75 backdrop-blur-sm px-4 py-2 rounded-2xl border border-agro-dark/10 text-xs sm:text-sm font-semibold text-agro-dark">
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-blue-700"></span>
+            Фонд содействия инновациям
+          </span>
+          <span class="text-agro-dark/30">•</span>
+          <span>Платформа университетского технологического предпринимательства</span>
+        </div>
+      </div>
+
+      <!-- Основная сетка Hero: Текст слева + Интерактивный симулятор прибора справа -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
+        <!-- Левая колонка -->
+        <div class="lg:col-span-7 space-y-6">
+          <h1 class="text-3xl sm:text-4xl lg:text-[44px] font-extrabold text-agro-dark leading-[1.15] tracking-tight">
+            Портативное устройство для оценки плодородия и контроля агрохимических параметров почвы на садовых участках
+          </h1>
+
+          <p class="text-base sm:text-lg lg:text-xl text-agro-dark/85 leading-relaxed max-w-2xl">
+            Экспресс-анализ <strong class="font-bold text-agro-dark">5 ключевых показателей</strong> (NPK, pH, влажность, температура и акустическая плотность грунта) прямо на грядке — вместо внесения удобрений наугад.
+          </p>
+
+          <!-- Ключевые плашки -->
+          <div class="grid grid-cols-3 gap-3 sm:gap-4 max-w-xl pt-1">
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-3.5 sm:p-4 border border-agro-dark/10">
+              <div class="text-xl sm:text-2xl font-extrabold text-agro-dark">~15 сек</div>
+              <div class="text-xs sm:text-sm text-agro-muted mt-0.5">время замера на участке</div>
+            </div>
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-3.5 sm:p-4 border border-agro-dark/10">
+              <div class="text-xl sm:text-2xl font-extrabold text-agro-dark">5 в 1</div>
+              <div class="text-xs sm:text-sm text-agro-muted mt-0.5">датчиков + анализ БПФ</div>
+            </div>
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-3.5 sm:p-4 border border-agro-dark/10">
+              <div class="text-xl sm:text-2xl font-extrabold text-agro-dark">~2 000 ₽</div>
+              <div class="text-xs sm:text-sm text-agro-muted mt-0.5">доступная цена прибора</div>
+            </div>
+          </div>
+
+          <!-- CTA кнопки -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
+            <a href="#contact" class="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full bg-agro-dark text-white font-semibold text-base hover:bg-agro-darkSoft transition-all shadow-md hover:shadow-lg">
+              <span>Оформить предзаказ / заявку</span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+              </svg>
+            </a>
+            <a href="#technology" class="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full bg-white/90 text-agro-dark font-semibold text-base border border-agro-dark/15 hover:bg-white transition-all">
+              <span>Как работает прибор</span>
+            </a>
+          </div>
+
+          <div class="text-xs sm:text-sm text-agro-dark/75 pt-2">
+            Автор разработки: <span class="font-semibold">Васильев Иван Андреевич</span> • г. Уфа, 2026
+          </div>
+        </div>
+
+        <!-- Правая колонка: ИНТЕРАКТИВНЫЙ СИМУЛЯТОР ПРИБОРА AGROSENSE (Слайд 4) -->
+        <div class="lg:col-span-5 flex flex-col items-center">
+          <div class="w-full max-w-md bg-white/90 backdrop-blur-md rounded-3xl p-5 sm:p-6 border border-agro-dark/15 shadow-soft">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-agro-muted">Интерактивный симулятор</span>
+              <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-agro-limeDeep bg-agro-lime/45 px-2.5 py-1 rounded-full">
+                <span class="w-1.5 h-1.5 rounded-full bg-agro-limeDeep"></span>
+                Щуп в грунте
+              </span>
+            </div>
+
+            <!-- Переключатель образцов почвы -->
+            <div class="grid grid-cols-3 gap-1.5 bg-agro-cream p-1.5 rounded-2xl mb-5 border border-agro-dark/10" role="tablist">
+              <button type="button" onclick="selectSoilSample('loam')" id="btn-loam"
+                class="sample-btn py-2 px-2 rounded-xl text-xs font-bold transition-all bg-agro-dark text-white shadow-sm">
+                Суглинок (норма)
+              </button>
+              <button type="button" onclick="selectSoilSample('acid')" id="btn-acid"
+                class="sample-btn py-2 px-2 rounded-xl text-xs font-semibold text-agro-dark/75 hover:text-agro-dark transition-all">
+                Закисленная
+              </button>
+              <button type="button" onclick="selectSoilSample('depleted')" id="btn-depleted"
+                class="sample-btn py-2 px-2 rounded-xl text-xs font-semibold text-agro-dark/75 hover:text-agro-dark transition-all">
+                Истощённая
+              </button>
+            </div>
+
+            <!-- Реалистичный корпус прибора AgroSense + металлический щуп (как на 4 слайде) -->
+            <div class="relative flex items-end justify-center gap-3 sm:gap-4 pt-2 pb-1">
+              <!-- Основной моноблок прибора -->
+              <div class="relative w-60 sm:w-64 bg-[#222521] rounded-[28px] p-3.5 shadow-device border-2 border-[#353A33]">
+                <!-- Ребристые зеленые боковые накладки -->
+                <div class="absolute -left-1.5 top-14 bottom-14 w-1.5 bg-[#7CB342] rounded-l-md"></div>
+                <div class="absolute -right-1.5 top-14 bottom-14 w-1.5 bg-[#7CB342] rounded-r-md"></div>
+
+                <!-- Кабель сверху к щупу -->
+                <div class="mx-auto -mt-6 mb-2 w-7 h-3 bg-[#181A17] rounded-t-md border-t border-x border-[#3D423B]"></div>
+
+                <!-- LED-дисплей прибора -->
+                <div class="bg-[#11151C] rounded-2xl p-3 border border-white/10 text-white font-mono">
+                  <!-- Верхняя строка экрана -->
+                  <div class="flex items-center justify-between border-b border-white/10 pb-1.5 mb-2">
+                    <span id="screen-title" class="text-xs font-sans font-bold tracking-wide text-white">Результаты</span>
+                    <!-- Индикатор батареи -->
+                    <div class="flex items-center gap-1">
+                      <div class="w-5 h-2.5 border border-agro-lime rounded-[3px] p-[1px] flex gap-[1px]">
+                        <div class="w-1 h-full bg-agro-lime"></div>
+                        <div class="w-1 h-full bg-agro-lime"></div>
+                        <div class="w-1 h-full bg-agro-lime"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Вкладка 1: Показатели (как на слайде 4) -->
+                  <div id="device-view-metrics" class="screen-fade space-y-1.5 text-[11px] sm:text-xs">
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-300 font-sans">Температура</span>
+                      <span id="val-temp" class="font-semibold text-white">22.5 °C</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-300 font-sans">Влажность</span>
+                      <span id="val-moisture" class="font-semibold text-white">38 %</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-300 font-sans">pH</span>
+                      <span id="val-ph" class="font-semibold text-white">6.42</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-300 font-sans">Азот (N)</span>
+                      <span id="val-n" class="font-semibold text-[#8CE052]">32 mg/kg</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-300 font-sans">Фосфор (P)</span>
+                      <span id="val-p" class="font-semibold text-[#F5B041]">28 mg/kg</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="text-gray-300 font-sans">Калий (K)</span>
+                      <span id="val-k" class="font-semibold text-[#F5B041]">310 mg/kg</span>
+                    </div>
+                    <div class="flex justify-between items-center pt-0.5 border-t border-white/10">
+                      <span class="text-gray-300 font-sans">Тип почвы</span>
+                      <span id="val-type" class="font-sans font-semibold text-white">Суглинок</span>
+                    </div>
+                  </div>
+
+                  <!-- Вкладка 2: Рекомендации агронома -->
+                  <div id="device-view-recs" class="hidden screen-fade space-y-2 text-[11px] font-sans leading-snug min-h-[156px]">
+                    <div class="p-2 rounded-lg bg-white/5 border border-agro-lime/30">
+                      <div class="text-agro-lime font-bold mb-0.5">Статус плодородия:</div>
+                      <p id="rec-status" class="text-gray-200">Оптимальный баланс для большинства овощных культур.</p>
+                    </div>
+                    <div class="p-2 rounded-lg bg-white/5 border border-white/10">
+                      <div class="text-amber-300 font-bold mb-0.5">Что внести:</div>
+                      <p id="rec-action" class="text-gray-200">Поддерживающий полив. Азотные подкормки не требуются.</p>
+                    </div>
+                  </div>
+
+                  <!-- Кнопка-строка на экране: Рекомендации > -->
+                  <button type="button" onclick="toggleDeviceScreen()"
+                    class="mt-2.5 w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-agro-lime/20 hover:bg-agro-lime/30 text-agro-lime font-sans font-semibold text-xs transition-colors">
+                    <span id="screen-toggle-label">Рекомендации</span>
+                    <span>&gt;</span>
+                  </button>
+                </div>
+
+                <!-- Физические кнопки управления под экраном -->
+                <div class="mt-3.5 grid grid-cols-3 gap-2 items-center px-3">
+                  <button type="button" onclick="toggleDeviceScreen()" title="Назад"
+                    class="h-8 rounded-lg bg-[#161815] border border-white/10 text-gray-300 hover:text-white flex items-center justify-center text-xs active:scale-95 transition">
+                    ←
+                  </button>
+                  <div class="flex flex-col gap-1.5">
+                    <button type="button" onclick="cycleSample(-1)" title="Предыдущий образец"
+                      class="h-7 rounded-lg bg-[#161815] border border-white/10 text-gray-300 hover:text-white flex items-center justify-center text-xs active:scale-95 transition">
+                      ▲
+                    </button>
+                    <button type="button" onclick="cycleSample(1)" title="Следующий образец"
+                      class="h-7 rounded-lg bg-[#161815] border border-white/10 text-gray-300 hover:text-white flex items-center justify-center text-xs active:scale-95 transition">
+                      ▼
+                    </button>
+                  </div>
+                  <button type="button" onclick="toggleDeviceScreen()" title="Переключить экран"
+                    class="h-8 rounded-lg bg-[#161815] border border-white/10 text-gray-300 hover:text-white flex items-center justify-center text-xs active:scale-95 transition">
+                    ↺
+                  </button>
+                </div>
+                <!-- Кнопка питания -->
+                <div class="mt-2 flex justify-center">
+                  <button type="button" onclick="triggerScanAnimation()" title="Повторный замер"
+                    class="w-9 h-7 rounded-lg bg-[#161815] border border-agro-lime/40 text-agro-lime hover:bg-agro-lime/20 flex items-center justify-center text-xs font-bold active:scale-95 transition">
+                    ⏻
+                  </button>
+                </div>
+              </div>
+
+              <!-- Сменный металлический щуп справа -->
+              <div class="hidden sm:flex flex-col items-center pb-1">
+                <div class="w-4 h-12 bg-[#1D201C] rounded-t-lg border border-white/10"></div>
+                <div class="w-6 h-16 bg-[#262A25] rounded-md border border-white/15 flex flex-col justify-evenly items-center py-1">
+                  <div class="w-4 h-0.5 bg-black/50"></div>
+                  <div class="w-4 h-0.5 bg-black/50"></div>
+                </div>
+                <!-- Стальной стержень с акустическими прорезями -->
+                <div class="w-3.5 h-36 bg-gradient-to-r from-gray-400 via-gray-100 to-gray-400 border-x border-gray-500 relative flex flex-col justify-end items-center pb-3">
+                  <div class="w-1 h-4 bg-gray-700 rounded-full mb-1"></div>
+                </div>
+                <!-- Острый наконечник -->
+                <div class="w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[18px] border-t-gray-300"></div>
+              </div>
+            </div>
+
+            <p class="text-[11px] text-center text-agro-muted mt-3">
+              Нажмите <strong class="text-agro-dark">«Рекомендации &gt;»</strong> на дисплее прибора, чтобы увидеть агрономический совет.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Нижняя точечная линия -->
+      <div class="slide-dots mt-12"></div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- 3. ПРОБЛЕМА (Слайд 2)                                     -->
+  <!-- ========================================================= -->
+  <section id="problem" class="py-16 sm:py-24 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mb-12">
+        <span class="inline-block px-3.5 py-1 rounded-full bg-agro-lime/60 text-agro-dark text-xs font-bold uppercase tracking-wider mb-3">
+          Актуальность проблемы
+        </span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-agro-dark tracking-tight">
+          Почему урожай мельчает, даже если вы поливаете и удобряете?
+        </h2>
+        <p class="mt-4 text-base sm:text-lg text-agro-muted leading-relaxed">
+          Помните, как у бабушки и дедушки всегда был богатый огород: крупные помидоры, сочная клубника, картофель вёдрами? Сегодня мы сажаем те же культуры и вносим удобрения, но урожай оказывается слабым, растения болеют, а плоды мельчают.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        <!-- Левая колонка: 4 причины деградации почвы (плашки как на 2 слайде) -->
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div class="text-sm font-bold uppercase tracking-wider text-agro-muted">4 скрытые причины в почве:</div>
+
+          <div class="space-y-3.5">
+            <div class="flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-agro-lime/80 border border-agro-dark/15 shadow-sm">
+              <div class="w-10 h-10 rounded-xl bg-agro-dark text-agro-lime font-extrabold flex items-center justify-center shrink-0">1</div>
+              <div>
+                <h3 class="font-bold text-agro-dark text-base sm:text-lg">Почва постепенно теряет баланс</h3>
+                <p class="text-xs sm:text-sm text-agro-dark/75">Нарушается естественная микрофлора и соотношение питательных веществ.</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-agro-lime/80 border border-agro-dark/15 shadow-sm">
+              <div class="w-10 h-10 rounded-xl bg-agro-dark text-agro-lime font-extrabold flex items-center justify-center shrink-0">2</div>
+              <div>
+                <h3 class="font-bold text-agro-dark text-base sm:text-lg">Изменяется уровень кислотности (pH)</h3>
+                <p class="text-xs sm:text-sm text-agro-dark/75">При сдвиге pH корни перестают усваивать даже внесённые удобрения.</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-agro-lime/80 border border-agro-dark/15 shadow-sm">
+              <div class="w-10 h-10 rounded-xl bg-agro-dark text-agro-lime font-extrabold flex items-center justify-center shrink-0">3</div>
+              <div>
+                <h3 class="font-bold text-agro-dark text-base sm:text-lg">Истощаются азот, фосфор и калий (NPK)</h3>
+                <p class="text-xs sm:text-sm text-agro-dark/75">Ежегодный вынос элементов с урожаем без точного восполнения дефицита.</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-agro-lime/80 border border-agro-dark/15 shadow-sm">
+              <div class="w-10 h-10 rounded-xl bg-agro-dark text-agro-lime font-extrabold flex items-center justify-center shrink-0">4</div>
+              <div>
+                <h3 class="font-bold text-agro-dark text-base sm:text-lg">Уплотняется структура грунта</h3>
+                <p class="text-xs sm:text-sm text-agro-dark/75">Ухудшается аэрация и водопроницаемость корнеобитаемого слоя.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Итоговый вывод слайда -->
+          <div class="p-5 rounded-2xl bg-agro-dark text-white">
+            <div class="text-agro-lime font-bold text-sm uppercase tracking-wider mb-1">Но мы этого не видим</div>
+            <p class="text-sm sm:text-base text-white/90">
+              В итоге садоводы действуют наугад, перекармливают землю неподходящими удобрениями и тратят лишние деньги без результата.
+            </p>
+          </div>
+        </div>
+
+        <!-- Правая колонка: Визуальное сравнение Ожидания vs Реальность (Клубника, Картофель, Томаты) -->
+        <div class="lg:col-span-6 bg-white rounded-3xl p-6 sm:p-8 border border-agro-dark/10 shadow-soft flex flex-col justify-between">
+          <div class="flex items-center justify-between pb-4 border-b border-agro-dark/10 mb-5">
+            <span class="text-sm font-bold text-agro-limeDeep uppercase tracking-wider">Ожидания садовода</span>
+            <span class="text-sm font-bold text-red-700 uppercase tracking-wider">Реальность без контроля</span>
+          </div>
+
+          <div class="space-y-5">
+            <!-- Ряд 1: Клубника -->
+            <div class="grid grid-cols-11 items-center gap-2 sm:gap-3 bg-agro-cream/60 p-3.5 rounded-2xl">
+              <div class="col-span-5 flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-agro-lime/50 flex items-center justify-center text-2xl shrink-0">🍓</div>
+                <div>
+                  <div class="font-bold text-sm text-agro-dark">Сочная клубника</div>
+                  <div class="text-xs text-agro-muted">Крупная, сладкая ягода</div>
+                </div>
+              </div>
+              <div class="col-span-1 flex justify-center text-agro-dark font-extrabold text-lg">→</div>
+              <div class="col-span-5 flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center text-2xl shrink-0">🥀</div>
+                <div>
+                  <div class="font-bold text-sm text-red-900">Мелкие и кислые</div>
+                  <div class="text-xs text-red-700/80">Серые гнили, низкий сахар</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ряд 2: Картофель -->
+            <div class="grid grid-cols-11 items-center gap-2 sm:gap-3 bg-agro-cream/60 p-3.5 rounded-2xl">
+              <div class="col-span-5 flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-agro-lime/50 flex items-center justify-center text-2xl shrink-0">🥔</div>
+                <div>
+                  <div class="font-bold text-sm text-agro-dark">Картофель вёдрами</div>
+                  <div class="text-xs text-agro-muted">Ровные крупные клубни</div>
+                </div>
+              </div>
+              <div class="col-span-1 flex justify-center text-agro-dark font-extrabold text-lg">→</div>
+              <div class="col-span-5 flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-2xl shrink-0">🪨</div>
+                <div>
+                  <div class="font-bold text-sm text-amber-950">«Горох» в горсти</div>
+                  <div class="text-xs text-amber-800/80">Уплотнённый грунт, дефицит K</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ряд 3: Томаты -->
+            <div class="grid grid-cols-11 items-center gap-2 sm:gap-3 bg-agro-cream/60 p-3.5 rounded-2xl">
+              <div class="col-span-5 flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-agro-lime/50 flex items-center justify-center text-2xl shrink-0">🍅</div>
+                <div>
+                  <div class="font-bold text-sm text-agro-dark">Крупные томаты</div>
+                  <div class="text-xs text-agro-muted">Дружное созревание</div>
+                </div>
+              </div>
+              <div class="col-span-1 flex justify-center text-agro-dark font-extrabold text-lg">→</div>
+              <div class="col-span-5 flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-2xl shrink-0">🍂</div>
+                <div>
+                  <div class="font-bold text-sm text-orange-950">Болезни и трещины</div>
+                  <div class="text-xs text-orange-800/80">Дисбаланс pH и азота</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-agro-dark/10 flex items-center justify-between text-xs sm:text-sm text-agro-muted">
+            <span>Точная диагностика предотвращает до 70% ошибок подкормки</span>
+            <span class="font-bold text-agro-dark">AgroSense</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div class="slide-dots"></div></div>
+
+  <!-- ========================================================= -->
+  <!-- 4. КАК СЕЙЧАС РЕШАЕТСЯ ПРОБЛЕМА / СРАВНЕНИЕ (Слайд 3)     -->
+  <!-- ========================================================= -->
+  <section id="comparison" class="py-16 sm:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mb-12">
+        <span class="inline-block px-3.5 py-1 rounded-full bg-agro-lime/60 text-agro-dark text-xs font-bold uppercase tracking-wider mb-3">
+          Анализ альтернатив
+        </span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-agro-dark tracking-tight">
+          Как сейчас решают проблему и почему это неудобно
+        </h2>
+        <p class="mt-3 text-base sm:text-lg text-agro-muted">
+          Существующие способы либо слишком дороги и медленны для дачника, либо не дают достоверной картины.
+        </p>
+      </div>
+
+      <!-- 4 карточки существующих решений (как на слайде 3) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <!-- 1 -->
+        <div class="bg-white rounded-3xl p-6 border border-agro-dark/10 shadow-soft flex flex-col justify-between">
+          <div>
+            <div class="w-11 h-11 rounded-full bg-agro-lime text-agro-dark font-extrabold text-lg flex items-center justify-center mb-4">1</div>
+            <h3 class="text-lg font-bold text-agro-dark mb-2">Лабораторные анализы</h3>
+            <p class="text-sm text-agro-muted leading-relaxed mb-4">
+              Почву отбирают вручную и отправляют в лабораторию для химических исследований.
+            </p>
+          </div>
+          <div class="pt-3 border-t border-agro-dark/10 space-y-1.5 text-xs">
+            <div class="text-emerald-700 font-semibold">+ Точные данные</div>
+            <div class="text-red-700 font-medium">− Занимает от 3 до 7 дней</div>
+            <div class="text-red-700 font-medium">− Дорого и сложная логистика</div>
+          </div>
+        </div>
+
+        <!-- 2 -->
+        <div class="bg-white rounded-3xl p-6 border border-agro-dark/10 shadow-soft flex flex-col justify-between">
+          <div>
+            <div class="w-11 h-11 rounded-full bg-agro-lime text-agro-dark font-extrabold text-lg flex items-center justify-center mb-4">2</div>
+            <h3 class="text-lg font-bold text-agro-dark mb-2">Домашние тест-наборы</h3>
+            <p class="text-sm text-agro-muted leading-relaxed mb-4">
+              Компактные химические полоски и колбы для определения кислотности или отдельных элементов.
+            </p>
+          </div>
+          <div class="pt-3 border-t border-agro-dark/10 space-y-1.5 text-xs">
+            <div class="text-emerald-700 font-semibold">+ Низкая стоимость</div>
+            <div class="text-red-700 font-medium">− Всего 1–2 параметра</div>
+            <div class="text-red-700 font-medium">− Приблизительный результат «на глаз»</div>
+          </div>
+        </div>
+
+        <!-- 3 -->
+        <div class="bg-white rounded-3xl p-6 border border-agro-dark/10 shadow-soft flex flex-col justify-between">
+          <div>
+            <div class="w-11 h-11 rounded-full bg-agro-lime text-agro-dark font-extrabold text-lg flex items-center justify-center mb-4">3</div>
+            <h3 class="text-lg font-bold text-agro-dark mb-2">Бюджетные тестеры с маркетплейсов</h3>
+            <p class="text-sm text-agro-muted leading-relaxed mb-4">
+              Дешёвые электронные щупы для базового измерения pH, влажности и температуры.
+            </p>
+          </div>
+          <div class="pt-3 border-t border-agro-dark/10 space-y-1.5 text-xs">
+            <div class="text-emerald-700 font-semibold">+ Просты в использовании</div>
+            <div class="text-red-700 font-medium">− Низкая точность датчиков</div>
+            <div class="text-red-700 font-medium">− Нет NPK, плотности и рекомендаций</div>
+          </div>
+        </div>
+
+        <!-- 4 -->
+        <div class="bg-white rounded-3xl p-6 border border-agro-dark/10 shadow-soft flex flex-col justify-between">
+          <div>
+            <div class="w-11 h-11 rounded-full bg-agro-lime text-agro-dark font-extrabold text-lg flex items-center justify-center mb-4">4</div>
+            <h3 class="text-lg font-bold text-agro-dark mb-2">Выезд агронома на участок</h3>
+            <p class="text-sm text-agro-muted leading-relaxed mb-4">
+              Специалист приезжает с профессиональным оборудованием, делает замеры и даёт план работ.
+            </p>
+          </div>
+          <div class="pt-3 border-t border-agro-dark/10 space-y-1.5 text-xs">
+            <div class="text-emerald-700 font-semibold">+ Профессиональный подход</div>
+            <div class="text-red-700 font-medium">− Высокая цена выезда</div>
+            <div class="text-red-700 font-medium">− Недоступно для большинства дачников</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Сравнительная сводка-преимущество AgroSense -->
+      <div class="bg-agro-dark text-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-soft">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <div class="lg:col-span-5">
+            <span class="inline-block px-3 py-1 rounded-full bg-agro-lime text-agro-dark text-xs font-extrabold uppercase tracking-wider mb-3">
+              Золотая середина
+            </span>
+            <h3 class="text-2xl sm:text-3xl font-extrabold leading-tight">
+              Почему AgroSense лучше аналогов?
+            </h3>
+            <p class="text-white/75 text-sm sm:text-base mt-2">
+              Мы объединили лабораторный подход с простотой бытового прибора по цене обычного садового инвентаря.
+            </p>
+          </div>
+          <div class="lg:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div class="bg-white/10 rounded-2xl p-4 border border-white/10">
+              <div class="text-agro-lime font-extrabold text-xl">15 сек</div>
+              <div class="text-xs text-white/80 mt-1">Результат сразу на грядке без ожидания</div>
+            </div>
+            <div class="bg-white/10 rounded-2xl p-4 border border-white/10">
+              <div class="text-agro-lime font-extrabold text-xl">5 метрик</div>
+              <div class="text-xs text-white/80 mt-1">NPK + pH + влажность + t° + плотность</div>
+            </div>
+            <div class="bg-white/10 rounded-2xl p-4 border border-white/10">
+              <div class="text-agro-lime font-extrabold text-xl">Советы</div>
+              <div class="text-xs text-white/80 mt-1">Готовые рекомендации на экране</div>
+            </div>
+            <div class="bg-agro-lime text-agro-dark rounded-2xl p-4">
+              <div class="font-extrabold text-xl">~2 000 ₽</div>
+              <div class="text-xs font-semibold mt-1">Окупается за один сезон на удобрениях</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- 5. РЕШЕНИЕ И 5 КЛЮЧЕВЫХ ИЗМЕРЕНИЙ (Слайд 4)               -->
+  <!-- ========================================================= -->
+  <section id="solution" class="py-16 sm:py-24 bg-white border-y border-agro-dark/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <!-- Описание решения и целевой аудитории -->
+        <div class="lg:col-span-5 space-y-6">
+          <span class="inline-block px-3.5 py-1 rounded-full bg-agro-lime text-agro-dark text-xs font-bold uppercase tracking-wider">
+            Наше решение
+          </span>
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-agro-dark tracking-tight">
+            Карманная агролаборатория в одном корпусе
+          </h2>
+          <p class="text-base text-agro-muted leading-relaxed">
+            AgroSense — это портативное устройство для экспресс-анализа почвы прямо на участке. Прибор измеряет ключевые агрохимические и физические параметры грунта и мгновенно переводит цифры в понятные действия для садовода.
+          </p>
+
+          <!-- Целевая аудитория (из 4 слайда) -->
+          <div class="bg-agro-cream rounded-3xl p-6 border border-agro-dark/10 space-y-4">
+            <h3 class="font-bold text-lg text-agro-dark">Для кого создан AgroSense:</h3>
+            <ul class="space-y-3">
+              <li class="flex items-start gap-3">
+                <span class="w-6 h-6 rounded-full bg-agro-lime text-agro-dark font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">✓</span>
+                <div>
+                  <span class="font-bold text-agro-dark block text-sm">Владельцы дач и садовых участков</span>
+                  <span class="text-xs text-agro-muted">Для точного ухода за теплицами, огородом, ягодниками и газоном.</span>
+                </div>
+              </li>
+              <li class="flex items-start gap-3">
+                <span class="w-6 h-6 rounded-full bg-agro-lime text-agro-dark font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">✓</span>
+                <div>
+                  <span class="font-bold text-agro-dark block text-sm">Фермеры малого и среднего бизнеса</span>
+                  <span class="text-xs text-agro-muted">Оперативный контроль полей, рассадников и оптимизация затрат на NPK.</span>
+                </div>
+              </li>
+            </ul>
+            <p class="text-xs text-agro-muted pt-2 border-t border-agro-dark/10">
+              Широкое распространение частных участков и фермерских хозяйств в России обеспечивает устойчивый спрос на подобные решения.
+            </p>
+          </div>
+        </div>
+
+        <!-- 5 ключевых измерений (Слайд 4) -->
+        <div class="lg:col-span-7">
+          <div class="text-sm font-bold uppercase tracking-wider text-agro-muted mb-4">
+            Прибор объединяет 5 ключевых измерений:
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- 1. Влажность -->
+            <div class="p-5 rounded-3xl bg-agro-cream/70 border border-agro-dark/10 hover:border-agro-dark/30 transition-colors">
+              <div class="w-11 h-11 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center text-xl mb-3">💧</div>
+              <h3 class="font-bold text-lg text-agro-dark">1. Влажность почвы</h3>
+              <p class="text-sm text-agro-muted mt-1">Позволяет точно определить время полива и избежать как пересыхания, так и закисания корней.</p>
+            </div>
+
+            <!-- 2. pH -->
+            <div class="p-5 rounded-3xl bg-agro-cream/70 border border-agro-dark/10 hover:border-agro-dark/30 transition-colors">
+              <div class="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-mono font-bold text-base mb-3">pH</div>
+              <h3 class="font-bold text-lg text-agro-dark">2. Кислотность (pH)</h3>
+              <p class="text-sm text-agro-muted mt-1">Показывает, нужно ли раскислять грунт (золой, доломитовой мукой) или подкислять для конкретных культур.</p>
+            </div>
+
+            <!-- 3. Температура -->
+            <div class="p-5 rounded-3xl bg-agro-cream/70 border border-agro-dark/10 hover:border-agro-dark/30 transition-colors">
+              <div class="w-11 h-11 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl mb-3">🌡️</div>
+              <h3 class="font-bold text-lg text-agro-dark">3. Температура грунта</h3>
+              <p class="text-sm text-agro-muted mt-1">Помогает выбрать идеальный момент для высадки рассады и посева семян в открытый грунт и теплицы.</p>
+            </div>
+
+            <!-- 4. NPK -->
+            <div class="p-5 rounded-3xl bg-agro-cream/70 border border-agro-dark/10 hover:border-agro-dark/30 transition-colors">
+              <div class="w-11 h-11 rounded-2xl bg-agro-lime text-agro-dark flex items-center justify-center font-mono font-extrabold text-sm mb-3">NPK</div>
+              <h3 class="font-bold text-lg text-agro-dark">4. Азот, Фосфор, Калий</h3>
+              <p class="text-sm text-agro-muted mt-1">Количественная оценка основных макроэлементов питания (мг/кг) для точечного подбора удобрений.</p>
+            </div>
+
+            <!-- 5. Акустический анализ (на всю ширину) -->
+            <div class="sm:col-span-2 p-6 rounded-3xl bg-agro-lime/45 border border-agro-dark/15">
+              <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-agro-dark text-agro-lime flex items-center justify-center text-xl shrink-0">🔊</div>
+                <div>
+                  <div class="inline-block text-[11px] font-bold uppercase tracking-wider text-agro-limeDeep mb-0.5">Уникальная функция</div>
+                  <h3 class="font-bold text-lg text-agro-dark">5. Акустический анализ структуры почвы</h3>
+                  <p class="text-sm text-agro-dark/80 mt-1">
+                    Определяет тип почвы (суглинок, чернозём, песчаник) и степень уплотнения грунта без раскопок с помощью звукового зондирования.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- 6. ТЕХНОЛОГИЧЕСКАЯ ИДЕЯ И АКУСТИЧЕСКИЙ БПФ-АНАЛИЗ (Слайд 5)-->
+  <!-- ========================================================= -->
+  <section id="technology" class="py-16 sm:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mb-12">
+        <span class="inline-block px-3.5 py-1 rounded-full bg-agro-lime/60 text-agro-dark text-xs font-bold uppercase tracking-wider mb-3">
+          Аппаратная архитектура
+        </span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-agro-dark tracking-tight">
+          Технологическая идея устройства
+        </h2>
+        <p class="mt-3 text-base sm:text-lg text-agro-muted">
+          Моноблочный портативный прибор со сменным щупом на базе проверенных и энергоэффективных компонентов.
+        </p>
+      </div>
+
+      <!-- 5 основных компонентов (Слайд 5) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-12">
+        <div class="bg-white rounded-3xl p-5 border border-agro-dark/10 shadow-soft text-center flex flex-col items-center">
+          <div class="w-14 h-14 rounded-2xl bg-agro-cream flex items-center justify-center text-agro-dark mb-4">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+              <rect x="6" y="6" width="12" height="12" rx="2"/>
+              <path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-sm sm:text-base text-agro-dark">Микроконтроллер ESP32</h3>
+          <p class="text-xs text-agro-muted mt-1.5">Высокопроизводительный вычислительный модуль с поддержкой БПФ и беспроводной связи.</p>
+        </div>
+
+        <div class="bg-white rounded-3xl p-5 border border-agro-dark/10 shadow-soft text-center flex flex-col items-center">
+          <div class="w-14 h-14 rounded-2xl bg-agro-cream flex items-center justify-center text-agro-dark mb-4">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+              <path d="M12 2v14m0 0l-3-3m3 3l3-3M7 22h10"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-sm sm:text-base text-agro-dark">Электрохимические датчики</h3>
+          <p class="text-xs text-agro-muted mt-1.5">Сенсорный блок в сменном щупе для замера ионов NPK, кислотности pH и влажности.</p>
+        </div>
+
+        <div class="bg-white rounded-3xl p-5 border border-agro-dark/10 shadow-soft text-center flex flex-col items-center">
+          <div class="w-14 h-14 rounded-2xl bg-agro-lime/60 flex items-center justify-center text-agro-dark mb-4">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+              <path d="M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3z"/>
+              <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v3"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-sm sm:text-base text-agro-dark">Пьезоэлектрический акустический модуль</h3>
+          <p class="text-xs text-agro-muted mt-1.5">MEMS-микрофон и излучатель импульсов для диагностики плотности и гранулометрии.</p>
+        </div>
+
+        <div class="bg-white rounded-3xl p-5 border border-agro-dark/10 shadow-soft text-center flex flex-col items-center">
+          <div class="w-14 h-14 rounded-2xl bg-agro-cream flex items-center justify-center text-agro-dark mb-4">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+              <rect x="3" y="4" width="18" height="14" rx="2"/>
+              <path d="M8 20h8M12 18v2"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-sm sm:text-base text-agro-dark">LED-дисплей</h3>
+          <p class="text-xs text-agro-muted mt-1.5">Контрастный цветной экран с высокой читаемостью даже под прямым солнечным светом.</p>
+        </div>
+
+        <div class="bg-white rounded-3xl p-5 border border-agro-dark/10 shadow-soft text-center flex flex-col items-center">
+          <div class="w-14 h-14 rounded-2xl bg-agro-cream flex items-center justify-center text-agro-dark mb-4">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+              <rect x="6" y="4" width="12" height="17" rx="2"/>
+              <path d="M10 2h4M12 9v6M9 12h6"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-sm sm:text-base text-agro-dark">Литий-ионный аккумулятор (USB Type-C)</h3>
+          <p class="text-xs text-agro-muted mt-1.5">Автономная работа на протяжении всего дачного сезона и быстрая зарядка от любого адаптера.</p>
+        </div>
+      </div>
+
+      <!-- Интерактивный блок: Акустический анализ структуры почвы методом БПФ (FFT) -->
+      <div class="bg-agro-dark text-white rounded-3xl p-6 sm:p-10 shadow-soft overflow-hidden relative">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div class="lg:col-span-6 space-y-5">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-agro-lime/20 text-agro-lime text-xs font-bold uppercase tracking-wider">
+              Технологическое ноу-хау
+            </div>
+            <h3 class="text-2xl sm:text-3xl font-extrabold leading-tight">
+              Акустический анализ структуры почвы методом БПФ (FFT)
+            </h3>
+            <p class="text-white/80 text-sm sm:text-base leading-relaxed">
+              Динамик подаёт тестовый звуковой импульс в грунт через металлический щуп, а пьезоэлектрический микрофон регистрирует затухание и отражение сигнала. Микроконтроллер ESP32 обрабатывает волну методом быстрого преобразования Фурье (БПФ / FFT) и сравнивает спектр с эталонной базой данных.
+            </p>
+
+            <!-- 3 шага алгоритма -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                <div class="text-agro-lime font-mono font-bold text-xs mb-1">01. ИМПУЛЬС</div>
+                <div class="text-xs text-white/80">Излучатель генерирует акустическую волну в почве</div>
+              </div>
+              <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                <div class="text-agro-lime font-mono font-bold text-xs mb-1">02. СПЕКТР БПФ</div>
+                <div class="text-xs text-white/80">Анализ затухания и частотного отклика на ESP32</div>
+              </div>
+              <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                <div class="text-agro-lime font-mono font-bold text-xs mb-1">03. КЛАССИФИКАЦИЯ</div>
+                <div class="text-xs text-white/80">Определение типа грунта и степени уплотнения</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Интерактивная визуализация спектра БПФ -->
+          <div class="lg:col-span-6 bg-[#141813] rounded-2xl p-5 border border-white/10">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <div>
+                <div class="text-xs font-mono text-agro-lime">FFT SPECTRUM ANALYZER • ESP32</div>
+                <div id="fft-subtitle" class="text-xs text-white/65">Профиль: Рыхлый суглинок (нормальное затухание)</div>
+              </div>
+              <div class="flex gap-1.5">
+                <button type="button" onclick="setFftMode('loam')" id="fft-btn-loam"
+                  class="fft-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-agro-lime text-agro-dark">
+                  Суглинок
+                </button>
+                <button type="button" onclick="setFftMode('dense')" id="fft-btn-dense"
+                  class="fft-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/10 text-white/80 hover:bg-white/20">
+                  Уплотнённая
+                </button>
+                <button type="button" onclick="setFftMode('sand')" id="fft-btn-sand"
+                  class="fft-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/10 text-white/80 hover:bg-white/20">
+                  Песчаная
+                </button>
+              </div>
+            </div>
+
+            <!-- Canvas для живого спектра БПФ -->
+            <div class="w-full h-44 sm:h-48 relative rounded-xl overflow-hidden bg-[#0D100C] border border-white/5">
+              <canvas id="fftCanvas" class="w-full h-full block"></canvas>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] font-mono text-white/50 mt-2.5">
+              <span>100 Гц</span>
+              <span>Частотный диапазон отклика</span>
+              <span>8 000 Гц</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div class="slide-dots"></div></div>
+
+  <!-- ========================================================= -->
+  <!-- 7. АНАЛИЗ РЫНКА И ЭКОНОМИКА ПРОЕКТА (Слайды 6 и 8)         -->
+  <!-- ========================================================= -->
+  <section id="market" class="py-16 sm:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mb-12">
+        <span class="inline-block px-3.5 py-1 rounded-full bg-agro-lime/60 text-agro-dark text-xs font-bold uppercase tracking-wider mb-3">
+          Инвестиционная привлекательность
+        </span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-agro-dark tracking-tight">
+          Объём рынка и экономика проекта
+        </h2>
+        <p class="mt-3 text-base sm:text-lg text-agro-muted">
+          Расчёт потенциала рынка РФ при розничной цене базовой версии устройства 2 000 ₽.
+        </p>
+      </div>
+
+      <!-- Блок TAM / SAM / SOM / Перспективы (Слайд 6) -->
+      <div class="bg-white rounded-3xl p-6 sm:p-10 border border-agro-dark/10 shadow-soft mb-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <!-- Левые карточки: TAM и SAM -->
+          <div class="lg:col-span-4 space-y-5">
+            <div class="p-5 rounded-2xl bg-agro-dark text-white">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-extrabold text-lg text-agro-lime">TAM</span>
+                <span class="text-xs text-white/60">100% рынка РФ</span>
+              </div>
+              <div class="text-2xl sm:text-3xl font-extrabold">40 млрд ₽</div>
+              <p class="text-xs sm:text-sm text-white/80 mt-2">
+                20 000 000 владельцев дач и фермеров в РФ при цене устройства 2 000 ₽.
+              </p>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-agro-cream border border-agro-dark/15">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-extrabold text-lg text-agro-dark">SAM</span>
+                <span class="text-xs text-agro-muted">30% от TAM</span>
+              </div>
+              <div class="text-2xl sm:text-3xl font-extrabold text-agro-dark">12 млрд ₽</div>
+              <p class="text-xs sm:text-sm text-agro-muted mt-2">
+                6 000 000 активных садоводов и фермеров, заинтересованных в контроле почвы.
+              </p>
+            </div>
+          </div>
+
+          <!-- Центральная визуализация вложенных кругов TAM / SAM / SOM (как на 6 слайде) -->
+          <div class="lg:col-span-4 flex flex-col items-center justify-center py-4">
+            <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
+              <!-- Круг TAM -->
+              <div class="w-full h-full rounded-full bg-agro-dark flex flex-col items-center pt-5 text-white shadow-md">
+                <span class="font-extrabold text-base tracking-wider">TAM</span>
+                <span class="text-[11px] text-white/70">40 млрд ₽</span>
+              </div>
+              <!-- Круг SAM -->
+              <div class="absolute bottom-0 w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-agro-cream border-2 border-agro-dark/20 flex flex-col items-center pt-4 text-agro-dark">
+                <span class="font-extrabold text-base tracking-wider">SAM</span>
+                <span class="text-[11px] text-agro-muted">12 млрд ₽</span>
+              </div>
+              <!-- Круг SOM -->
+              <div class="absolute bottom-0 w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-agro-lime border-2 border-agro-dark/25 flex flex-col items-center justify-center text-agro-dark shadow-inner">
+                <span class="font-extrabold text-lg tracking-wider">SOM</span>
+                <span class="text-[11px] font-bold">120 млн ₽</span>
+                <span class="text-[10px] text-agro-dark/75">60 000 устр.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Правые карточки: SOM и Перспективы -->
+          <div class="lg:col-span-4 space-y-5">
+            <div class="p-5 rounded-2xl bg-agro-lime border border-agro-dark/15">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-extrabold text-lg text-agro-dark">SOM</span>
+                <span class="text-xs font-bold text-agro-dark/75">1% от SAM</span>
+              </div>
+              <div class="text-2xl sm:text-3xl font-extrabold text-agro-dark">120 млн ₽</div>
+              <p class="text-xs sm:text-sm text-agro-dark/85 mt-2">
+                Целевая доля рынка: <strong>60 000 устройств</strong> на этапе масштабирования.
+              </p>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-agro-cream border border-agro-dark/15">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-extrabold text-lg text-agro-dark">Перспективы</span>
+                <span class="text-xs font-bold text-agro-limeDeep">5% от SAM</span>
+              </div>
+              <div class="text-2xl sm:text-3xl font-extrabold text-agro-dark">600 млн ₽</div>
+              <p class="text-xs sm:text-sm text-agro-muted mt-2">
+                Расширение продуктовой линейки: <strong>300 000 устройств</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Блок Экономика проекта и план развития (Слайд 8 — на фирменном лаймовом фоне) -->
+      <div class="bg-agro-lime rounded-3xl p-6 sm:p-10 border border-agro-dark/15 shadow-soft">
+        <div class="mb-8">
+          <span class="text-xs font-bold uppercase tracking-wider text-agro-dark/70">Портативное устройство для экспресс-анализа почвы</span>
+          <h3 class="text-2xl sm:text-3xl font-extrabold text-agro-dark mt-1">Экономика проекта и план развития</h3>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+          <!-- Колонка 1: Стоимость устройства -->
+          <div class="bg-white/85 backdrop-blur-sm rounded-2xl p-6 border border-agro-dark/10">
+            <h4 class="text-lg font-extrabold text-agro-dark mb-4 pb-2 border-b border-agro-dark/10">
+              Стоимость устройства
+            </h4>
+            <ul class="space-y-4">
+              <li class="flex items-center justify-between">
+                <span class="text-sm text-agro-dark/80">Базовая версия</span>
+                <span class="font-extrabold text-lg text-agro-dark">~ 2 000 ₽</span>
+              </li>
+              <li class="flex items-center justify-between">
+                <span class="text-sm text-agro-dark/80">Себестоимость</span>
+                <span class="font-bold text-base text-agro-dark">~ 1 200 ₽</span>
+              </li>
+              <li class="flex items-center justify-between pt-3 border-t border-agro-dark/10">
+                <span class="text-sm font-bold text-agro-dark">Валовая прибыль с 1 устр.</span>
+                <span class="px-3 py-1 rounded-full bg-agro-dark text-agro-lime font-extrabold text-sm">~ 800 ₽ (40%)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Колонка 2: План продаж -->
+          <div class="bg-white/85 backdrop-blur-sm rounded-2xl p-6 border border-agro-dark/10">
+            <h4 class="text-lg font-extrabold text-agro-dark mb-4 pb-2 border-b border-agro-dark/10">
+              План продаж и маржинальность
+            </h4>
+            <div class="space-y-3 text-sm">
+              <div class="flex items-center justify-between p-2.5 rounded-xl bg-agro-cream/80">
+                <div>
+                  <span class="font-bold text-agro-dark">1 год</span>
+                  <span class="text-agro-muted ml-1.5">— 100 устройств</span>
+                </div>
+                <span class="font-extrabold text-agro-dark">~ 80 000 ₽</span>
+              </div>
+              <div class="flex items-center justify-between p-2.5 rounded-xl bg-agro-cream/80">
+                <div>
+                  <span class="font-bold text-agro-dark">2 год</span>
+                  <span class="text-agro-muted ml-1.5">— 300 устройств</span>
+                </div>
+                <span class="font-extrabold text-agro-dark">~ 240 000 ₽</span>
+              </div>
+              <div class="flex items-center justify-between p-2.5 rounded-xl bg-agro-cream/80">
+                <div>
+                  <span class="font-bold text-agro-dark">3 год</span>
+                  <span class="text-agro-muted ml-1.5">— 700 устройств</span>
+                </div>
+                <span class="font-extrabold text-agro-dark">~ 560 000 ₽</span>
+              </div>
+              <div class="flex items-center justify-between p-2.5 rounded-xl bg-agro-dark text-white">
+                <div>
+                  <span class="font-bold text-agro-lime">5 год</span>
+                  <span class="text-white/80 ml-1.5">— 2 000 устройств</span>
+                </div>
+                <span class="font-extrabold text-agro-lime">~ 1,6 млн ₽</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Колонка 3: Каналы продаж -->
+          <div class="bg-white/85 backdrop-blur-sm rounded-2xl p-6 border border-agro-dark/10 flex flex-col justify-between">
+            <div>
+              <h4 class="text-lg font-extrabold text-agro-dark mb-4 pb-2 border-b border-agro-dark/10">
+                Каналы продаж
+              </h4>
+              <ul class="space-y-3 text-sm font-medium text-agro-dark">
+                <li class="flex items-center gap-3 p-2.5 rounded-xl bg-agro-cream/70">
+                  <span class="w-2.5 h-2.5 rounded-full bg-agro-dark"></span>
+                  <span>Маркетплейсы (Ozon, Wildberries)</span>
+                </li>
+                <li class="flex items-center gap-3 p-2.5 rounded-xl bg-agro-cream/70">
+                  <span class="w-2.5 h-2.5 rounded-full bg-agro-dark"></span>
+                  <span>Интернет-магазин проекта</span>
+                </li>
+                <li class="flex items-center gap-3 p-2.5 rounded-xl bg-agro-cream/70">
+                  <span class="w-2.5 h-2.5 rounded-full bg-agro-dark"></span>
+                  <span>Садовые и агромагазины</span>
+                </li>
+                <li class="flex items-center gap-3 p-2.5 rounded-xl bg-agro-cream/70">
+                  <span class="w-2.5 h-2.5 rounded-full bg-agro-dark"></span>
+                  <span>Сельскохозяйственные выставки</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- 8. ПИЛОТНЫЙ ПРОЕКТ / БЮДЖЕТ 1 000 000 ₽ (Слайд 7)         -->
+  <!-- ========================================================= -->
+  <section id="roadmap" class="py-16 sm:py-24 bg-white border-y border-agro-dark/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
+        <div>
+          <span class="inline-block px-3.5 py-1 rounded-full bg-agro-lime text-agro-dark text-xs font-bold uppercase tracking-wider mb-3">
+            Дорожная карта реализации
+          </span>
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-agro-dark tracking-tight">
+            Пилотный проект: 4 этапа реализации
+          </h2>
+        </div>
+        <div class="bg-agro-dark text-white px-5 py-3 rounded-2xl inline-flex items-center gap-3 self-start md:self-auto">
+          <span class="text-xs text-white/75 uppercase tracking-wider">Общий бюджет:</span>
+          <span class="text-xl font-extrabold text-agro-lime">1 000 000 ₽</span>
+        </div>
+      </div>
+
+      <!-- 4 сектора пилотного проекта (как диаграмма на 7 слайде: 280к, 220к, 250к, 250к) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Этап 1: 280к -->
+        <div class="rounded-3xl p-6 sm:p-8 bg-agro-cream/70 border border-agro-dark/15 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between gap-4 mb-4">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-agro-muted">Этап 01</span>
+              <span class="px-4 py-1.5 rounded-full bg-agro-lime text-agro-dark font-extrabold text-lg border border-agro-dark/15">
+                280 000 ₽
+              </span>
+            </div>
+            <h3 class="text-xl font-extrabold text-agro-dark mb-4">Разработка прототипа</h3>
+            <ul class="space-y-2 text-sm text-agro-dark/85">
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Закупка комплектующих</li>
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Изготовление печатных плат</li>
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>3D-печать корпусов</li>
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Сборка и пайка прототипов</li>
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Базовая калибровка датчиков и первичная прошивка</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Этап 2: 220к -->
+        <div class="rounded-3xl p-6 sm:p-8 bg-agro-cream/70 border border-agro-dark/15 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between gap-4 mb-4">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-agro-muted">Этап 02</span>
+              <span class="px-4 py-1.5 rounded-full bg-agro-lime text-agro-dark font-extrabold text-lg border border-agro-dark/15">
+                220 000 ₽
+              </span>
+            </div>
+            <h3 class="text-xl font-extrabold text-agro-dark mb-4">Тестирование на реальных участках</h3>
+            <ul class="space-y-2 text-sm text-agro-dark/85">
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Сбор и обработка данных с полевых тестирований</li>
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Доработка акустического модуля</li>
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Расширение базы знаний почв</li>
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Оптимизация энергопотребления</li>
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Исправление ошибок прошивки</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Этап 3: 250к -->
+        <div class="rounded-3xl p-6 sm:p-8 bg-agro-cream/70 border border-agro-dark/15 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between gap-4 mb-4">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-agro-muted">Этап 03</span>
+              <span class="px-4 py-1.5 rounded-full bg-agro-lime text-agro-dark font-extrabold text-lg border border-agro-dark/15">
+                250 000 ₽
+              </span>
+            </div>
+            <h3 class="text-xl font-extrabold text-agro-dark mb-4">Доработка алгоритмов и подготовка серии</h3>
+            <ul class="space-y-2 text-sm text-agro-dark/85">
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Изготовление пресс-формы для серийного корпуса</li>
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Контрактная сборка на производственной площадке</li>
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Калибровка и тестирование каждой единицы</li>
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Разработка упаковки, печать инструкций и сертификация</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Этап 4: 250к -->
+        <div class="rounded-3xl p-6 sm:p-8 bg-agro-cream/70 border border-agro-dark/15 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between gap-4 mb-4">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-agro-muted">Этап 04</span>
+              <span class="px-4 py-1.5 rounded-full bg-agro-lime text-agro-dark font-extrabold text-lg border border-agro-dark/15">
+                250 000 ₽
+              </span>
+            </div>
+            <h3 class="text-xl font-extrabold text-agro-dark mb-4">Подготовка к производству и валидация</h3>
+            <ul class="space-y-2 text-sm text-agro-dark/85">
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Аренда тестовых садовых и фермерских участков</li>
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Привлечение профильного агронома-консультанта</li>
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Лабораторный контрольный анализ проб почвы</li>
+              <li class="flex items-center gap-2.5"><span class="w-1.5 h-1.5 rounded-full bg-agro-dark"></span>Закупка расходных материалов для испытаний</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- 9. ФОРМА ЗАЯВКИ И КОНТАКТЫ ОСНОВАТЕЛЯ (Слайд 9)           -->
+  <!-- ========================================================= -->
+  <section id="contact" class="py-16 sm:py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        <!-- Левая колонка: Интерактивная форма заявки -->
+        <div class="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-10 border border-agro-dark/10 shadow-soft">
+          <span class="inline-block px-3.5 py-1 rounded-full bg-agro-lime text-agro-dark text-xs font-bold uppercase tracking-wider mb-3">
+            Присоединяйтесь к проекту
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-agro-dark tracking-tight">
+            Оставьте заявку на предзаказ или сотрудничество
+          </h2>
+          <p class="text-sm sm:text-base text-agro-muted mt-2 mb-6">
+            Мы открыты к предзаказам от садоводов, пилотным испытаниям в фермерских хозяйствах, партнёрству с агромагазинами и инвесторами.
+          </p>
+
+          <form id="leadForm" class="space-y-5">
+            <!-- Выбор роли -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-agro-muted mb-2">Кто вы?</label>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <label class="cursor-pointer">
+                  <input type="radio" name="role" value="Садовод / фермер" class="peer sr-only" checked />
+                  <div class="p-3 rounded-2xl border border-agro-dark/15 text-center text-sm font-semibold text-agro-dark/80 peer-checked:bg-agro-dark peer-checked:text-white peer-checked:border-agro-dark transition-all">
+                    🌱 Садовод / фермер
+                  </div>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="role" value="Инвестор / партнёр" class="peer sr-only" />
+                  <div class="p-3 rounded-2xl border border-agro-dark/15 text-center text-sm font-semibold text-agro-dark/80 peer-checked:bg-agro-dark peer-checked:text-white peer-checked:border-agro-dark transition-all">
+                    💼 Инвестор / партнёр
+                  </div>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="role" value="Дистрибьютор / магазин" class="peer sr-only" />
+                  <div class="p-3 rounded-2xl border border-agro-dark/15 text-center text-sm font-semibold text-agro-dark/80 peer-checked:bg-agro-dark peer-checked:text-white peer-checked:border-agro-dark transition-all">
+                    🏪 Дистрибьютор
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="userName" class="block text-xs font-bold uppercase tracking-wider text-agro-muted mb-1.5">Ваше имя *</label>
+                <input type="text" id="userName" required placeholder="Александр Петров"
+                  class="w-full px-4 py-3 rounded-2xl bg-agro-cream/60 border border-agro-dark/15 text-agro-dark placeholder:text-agro-muted/60 focus:outline-none focus:border-agro-dark focus:bg-white transition-colors" />
+              </div>
+              <div>
+                <label for="userContact" class="block text-xs font-bold uppercase tracking-wider text-agro-muted mb-1.5">Телефон или Email *</label>
+                <input type="text" id="userContact" required placeholder="+7 (900) 000-00-00"
+                  class="w-full px-4 py-3 rounded-2xl bg-agro-cream/60 border border-agro-dark/15 text-agro-dark placeholder:text-agro-muted/60 focus:outline-none focus:border-agro-dark focus:bg-white transition-colors" />
+              </div>
+            </div>
+
+            <div>
+              <label for="userComment" class="block text-xs font-bold uppercase tracking-wider text-agro-muted mb-1.5">Комментарий или вопрос</label>
+              <textarea id="userComment" rows="3" placeholder="Например: интересует предзаказ 2 приборов для теплицы или условия участия в пилотном тестировании..."
+                class="w-full px-4 py-3 rounded-2xl bg-agro-cream/60 border border-agro-dark/15 text-agro-dark placeholder:text-agro-muted/60 focus:outline-none focus:border-agro-dark focus:bg-white transition-colors"></textarea>
+            </div>
+
+            <button type="submit"
+              class="w-full py-4 px-6 rounded-full bg-agro-dark text-white font-bold text-base hover:bg-agro-darkSoft transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+              <span>Отправить заявку</span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+              </svg>
+            </button>
+
+            <!-- Красивое уведомление об отправке (вместо alert) -->
+            <div id="formSuccessMessage" class="hidden p-4 rounded-2xl bg-agro-lime/60 border border-agro-dark/20 text-agro-dark text-sm font-medium">
+              <div class="font-bold text-base mb-0.5">✓ Заявка успешно принята!</div>
+              <p id="formSuccessDetails">Спасибо за интерес к проекту AgroSense. Основатель проекта свяжется с вами в ближайшее время.</p>
+            </div>
+          </form>
+        </div>
+
+        <!-- Правая колонка: Контакты автора проекта (Слайд 9 — на фирменном лаймовом фоне) -->
+        <div class="lg:col-span-5 bg-agro-lime rounded-3xl p-6 sm:p-10 border border-agro-dark/15 shadow-soft flex flex-col justify-between relative overflow-hidden">
+          <!-- Декоративный лист -->
+          <svg class="botanical-bg absolute -bottom-10 -right-10 w-64 h-64 text-white opacity-50" viewBox="0 0 200 200" fill="currentColor">
+            <path d="M100,10 C45,30 15,85 20,145 C75,140 125,110 155,60 C175,95 190,135 185,175 C195,115 170,40 100,10 Z"/>
+          </svg>
+
+          <div class="relative z-10">
+            <div class="slide-dots mb-6"></div>
+            <span class="inline-block px-3 py-1 rounded-full bg-agro-dark text-agro-lime text-xs font-bold uppercase tracking-wider mb-4">
+              Контакты проекта
+            </span>
+
+            <h3 class="text-2xl sm:text-3xl font-extrabold text-agro-dark leading-tight">
+              Васильев Иван Андреевич
+            </h3>
+            <p class="text-sm font-semibold text-agro-dark/75 mt-1">
+              Руководитель проекта AgroSense • Заявка СтС-604708
+            </p>
+
+            <div class="mt-8 space-y-5">
+              <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-agro-dark/10">
+                <div class="text-xs font-bold uppercase tracking-wider text-agro-muted">Телефон</div>
+                <div class="flex items-center justify-between gap-2 mt-1">
+                  <a href="tel:+79170451524" class="text-lg sm:text-xl font-extrabold text-agro-dark hover:underline">
+                    +7 917 045 15 24
+                  </a>
+                  <button type="button" onclick="copyText('+7 917 045 15 24', this)"
+                    class="px-3 py-1.5 rounded-xl bg-agro-dark text-white text-xs font-semibold hover:bg-agro-darkSoft transition">
+                    Копировать
+                  </button>
+                </div>
+              </div>
+
+              <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-agro-dark/10">
+                <div class="text-xs font-bold uppercase tracking-wider text-agro-muted">Электронная почта</div>
+                <div class="flex items-center justify-between gap-2 mt-1">
+                  <a href="mailto:vasiljev.vanay2017@gmail.com" class="text-sm sm:text-base font-extrabold text-agro-dark hover:underline break-all">
+                    vasiljev.vanay2017@gmail.com
+                  </a>
+                  <button type="button" onclick="copyText('vasiljev.vanay2017@gmail.com', this)"
+                    class="px-3 py-1.5 rounded-xl bg-agro-dark text-white text-xs font-semibold hover:bg-agro-darkSoft transition shrink-0">
+                    Копировать
+                  </button>
+                </div>
+              </div>
+
+              <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-agro-dark/10">
+                <div class="text-xs font-bold uppercase tracking-wider text-agro-muted">Локация и год</div>
+                <div class="text-base font-bold text-agro-dark mt-1">г. Уфа, 2026</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="relative z-10 mt-8">
+            <div class="slide-dots"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- 10. ФУТЕР                                                 -->
+  <!-- ========================================================= -->
+  <footer class="bg-agro-dark text-white py-10 border-t border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <span class="w-3 h-3 rounded-full bg-agro-lime"></span>
+            <span class="font-extrabold text-lg tracking-tight">AgroSense</span>
+            <span class="text-xs text-white/50">• СтС-604708</span>
+          </div>
+          <p class="text-xs sm:text-sm text-white/65 mt-2 max-w-xl">
+            Разработка портативного устройства для оценки плодородия и контроля агрохимических параметров почвы на садовых участках. Проект создан при поддержке Фонда содействия инновациям (Платформа университетского технологического предпринимательства).
+          </p>
+        </div>
+
+        <div class="text-xs text-white/60 md:text-right">
+          <div>Васильев Иван Андреевич</div>
+          <div class="mt-1">г. Уфа, 2026</div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================================= -->
+  <!-- ИНТЕРАКТИВНЫЙ JAVASCRIPT                                  -->
+  <!-- ========================================================= -->
+  <script>
+    // 1. Мобильное меню
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+    mobileMenu.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+    });
+
+    // 2. Интерактивный симулятор прибора AgroSense (данные с 4 слайда + сценарии)
+    const soilSamples = {
+      loam: {
+        temp: '22.5 °C',
+        moisture: '38 %',
+        ph: '6.42',
+        phColor: 'text-white',
+        n: '32 mg/kg',
+        nColor: 'text-[#8CE052]',
+        p: '28 mg/kg',
+        pColor: 'text-[#F5B041]',
+        k: '310 mg/kg',
+        kColor: 'text-[#F5B041]',
+        type: 'Суглинок',
+        status: 'Оптимальный баланс pH (6.42) и умеренный уровень NPK. Отличные условия для томатов и ягод.',
+        action: 'Поддерживайте влажность 35–45%. Внесите лёгкую фосфорно-калийную подкормку при цветении.'
+      },
+      acid: {
+        temp: '19.8 °C',
+        moisture: '54 %',
+        ph: '4.85',
+        phColor: 'text-red-400',
+        n: '18 mg/kg',
+        nColor: 'text-[#F5B041]',
+        p: '14 mg/kg',
+        pColor: 'text-red-400',
+        k: '195 mg/kg',
+        kColor: 'text-white',
+        type: 'Тяж. суглинок',
+        status: 'Повышенная кислотность (pH 4.85) блокирует усвоение фосфора и угнетает корневую систему.',
+        action: 'Проведите раскисление: внесите 250–300 г доломитовой муки или древесной золы на 1 м².'
+      },
+      depleted: {
+        temp: '25.1 °C',
+        moisture: '21 %',
+        ph: '6.80',
+        phColor: 'text-white',
+        n: '9 mg/kg',
+        nColor: 'text-red-400',
+        p: '11 mg/kg',
+        pColor: 'text-red-400',
+        k: '115 mg/kg',
+        kColor: 'text-red-400',
+        type: 'Супесь (рыхл.)',
+        status: 'Критический дефицит азота, фосфора и влаги. Высокий риск осыпания завязей и мелких плодов.',
+        action: 'Обильный полив + комплексное удобрение NPK (16:16:16) из расчёта 25 г на 10 л воды.'
+      }
+    };
+
+    const sampleOrder = ['loam', 'acid', 'depleted'];
+    let currentSampleKey = 'loam';
+    let isRecsView = false;
+
+    function selectSoilSample(key) {
+      currentSampleKey = key;
+      const data = soilSamples[key];
+
+      // Обновляем активную кнопку образца
+      document.querySelectorAll('.sample-btn').forEach(btn => {
+        btn.classList.remove('bg-agro-dark', 'text-white', 'shadow-sm', 'font-bold');
+        btn.classList.add('text-agro-dark/75', 'font-semibold');
+      });
+      const activeBtn = document.getElementById('btn-' + key);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-agro-dark', 'text-white', 'shadow-sm', 'font-bold');
+        activeBtn.classList.remove('text-agro-dark/75', 'font-semibold');
+      }
+
+      // Обновляем показатели на дисплее прибора
+      document.getElementById('val-temp').textContent = data.temp;
+      document.getElementById('val-moisture').textContent = data.moisture;
+
+      const phEl = document.getElementById('val-ph');
+      phEl.textContent = data.ph;
+      phEl.className = 'font-semibold ' + data.phColor;
+
+      const nEl = document.getElementById('val-n');
+      nEl.textContent = data.n;
+      nEl.className = 'font-semibold ' + data.nColor;
+
+      const pEl = document.getElementById('val-p');
+      pEl.textContent = data.p;
+      pEl.className = 'font-semibold ' + data.pColor;
+
+      const kEl = document.getElementById('val-k');
+      kEl.textContent = data.k;
+      kEl.className = 'font-semibold ' + data.kColor;
+
+      document.getElementById('val-type').textContent = data.type;
+      document.getElementById('rec-status').textContent = data.status;
+      document.getElementById('rec-action').textContent = data.action;
+
+      // Синхронизируем с графиком БПФ
+      if (key === 'acid') setFftMode('dense');
+      else if (key === 'depleted') setFftMode('sand');
+      else setFftMode('loam');
+    }
+
+    function cycleSample(direction) {
+      const idx = sampleOrder.indexOf(currentSampleKey);
+      const nextIdx = (idx + direction + sampleOrder.length) % sampleOrder.length;
+      selectSoilSample(sampleOrder[nextIdx]);
+    }
+
+    function toggleDeviceScreen() {
+      isRecsView = !isRecsView;
+      const metricsView = document.getElementById('device-view-metrics');
+      const recsView = document.getElementById('device-view-recs');
+      const titleEl = document.getElementById('screen-title');
+      const toggleLabel = document.getElementById('screen-toggle-label');
+
+      if (isRecsView) {
+        metricsView.classList.add('hidden');
+        recsView.classList.remove('hidden');
+        titleEl.textContent = 'Рекомендации';
+        toggleLabel.textContent = 'Назад к замерам';
+      } else {
+        recsView.classList.add('hidden');
+        metricsView.classList.remove('hidden');
+        titleEl.textContent = 'Результаты';
+        toggleLabel.textContent = 'Рекомендации';
+      }
+    }
+
+    function triggerScanAnimation() {
+      const screen = document.getElementById('device-view-metrics');
+      screen.style.opacity = '0.25';
+      setTimeout(() => {
+        screen.style.opacity = '1';
+      }, 220);
+    }
+
+    // 3. Интерактивная визуализация акустического спектра БПФ (FFT) на Canvas
+    const fftCanvas = document.getElementById('fftCanvas');
+    const fftCtx = fftCanvas.getContext('2d');
+    let fftMode = 'loam';
+    let animationPhase = 0;
+
+    const fftProfiles = {
+      loam: {
+        subtitle: 'Профиль: Рыхлый суглинок (нормальное затухание)',
+        peakFreq: 0.35,
+        spread: 0.16,
+        amp: 0.78
+      },
+      dense: {
+        subtitle: 'Профиль: Уплотнённый грунт (высокочастотное отражение)',
+        peakFreq: 0.68,
+        spread: 0.12,
+        amp: 0.92
+      },
+      sand: {
+        subtitle: 'Профиль: Песчаная почва (быстрое рассеивание импульса)',
+        peakFreq: 0.22,
+        spread: 0.24,
+        amp: 0.58
+      }
+    };
+
+    function setFftMode(mode) {
+      fftMode = mode;
+      document.getElementById('fft-subtitle').textContent = fftProfiles[mode].subtitle;
+      document.querySelectorAll('.fft-btn').forEach(btn => {
+        btn.classList.remove('bg-agro-lime', 'text-agro-dark');
+        btn.classList.add('bg-white/10', 'text-white/80');
+      });
+      const active = document.getElementById('fft-btn-' + mode);
+      if (active) {
+        active.classList.add('bg-agro-lime', 'text-agro-dark');
+        active.classList.remove('bg-white/10', 'text-white/80');
+      }
+    }
+
+    function resizeFftCanvas() {
+      if (!fftCanvas) return;
+      const rect = fftCanvas.parentElement.getBoundingClientRect();
+      fftCanvas.width = rect.width;
+      fftCanvas.height = rect.height;
+    }
+
+    function drawFftSpectrum() {
+      if (!fftCtx) return;
+      const w = fftCanvas.width;
+      const h = fftCanvas.height;
+      fftCtx.clearRect(0, 0, w, h);
+
+      // Сетка осциллографа
+      fftCtx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+      fftCtx.lineWidth = 1;
+      for (let x = 0; x < w; x += 36) {
+        fftCtx.beginPath();
+        fftCtx.moveTo(x, 0);
+        fftCtx.lineTo(x, h);
+        fftCtx.stroke();
+      }
+      for (let y = 0; y < h; y += 32) {
+        fftCtx.beginPath();
+        fftCtx.moveTo(0, y);
+        fftCtx.lineTo(w, y);
+        fftCtx.stroke();
+      }
+
+      const profile = fftProfiles[fftMode];
+      const barCount = 44;
+      const barGap = 4;
+      const barWidth = Math.max(3, (w - barGap * (barCount + 1)) / barCount);
+
+      for (let i = 0; i < barCount; i++) {
+        const normX = i / barCount;
+        // Гауссов колокол вокруг резонансной частоты грунта + живая микровибрация
+        const dist = (normX - profile.peakFreq) / profile.spread;
+        const gaussian = Math.exp(-0.5 * dist * dist) * profile.amp;
+        const ripple = 0.06 * Math.sin(animationPhase + i * 0.65) + 0.04 * Math.cos(animationPhase * 1.4 - i * 0.4);
+        const magnitude = Math.max(0.08, Math.min(0.95, gaussian + ripple));
+
+        const barHeight = magnitude * (h - 24);
+        const x = barGap + i * (barWidth + barGap);
+        const y = h - barHeight - 8;
+
+        // Градиент столбца спектра в фирменном лаймовом цвете
+        const grad = fftCtx.createLinearGradient(0, y, 0, h);
+        grad.addColorStop(0, '#C4EB95');
+        grad.addColorStop(1, 'rgba(196, 235, 149, 0.15)');
+
+        fftCtx.fillStyle = grad;
+        fftCtx.beginPath();
+        fftCtx.roundRect(x, y, barWidth, barHeight, 3);
+        fftCtx.fill();
+      }
+
+      animationPhase += 0.07;
+      requestAnimationFrame(drawFftSpectrum);
+    }
+
+    window.addEventListener('resize', resizeFftCanvas);
+    window.addEventListener('load', () => {
+      resizeFftCanvas();
+      drawFftSpectrum();
+    });
+
+    // 4. Копирование контактов в буфер обмена (через execCommand для совместимости с iframe)
+    function copyText(text, btnElement) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        const originalText = btnElement.textContent;
+        btnElement.textContent = 'Скопировано!';
+        btnElement.classList.add('bg-agro-limeDeep');
+        setTimeout(() => {
+          btnElement.textContent = originalText;
+          btnElement.classList.remove('bg-agro-limeDeep');
+        }, 1800);
+      } catch (err) {
+        console.error('Ошибка копирования', err);
+      }
+      document.body.removeChild(textarea);
+    }
+
+    // 5. Обработка формы обратной связи без alert()
+    document.getElementById('leadForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const name = document.getElementById('userName').value.trim();
+      const role = document.querySelector('input[name="role"]:checked').value;
+      const successBox = document.getElementById('formSuccessMessage');
+      const detailsEl = document.getElementById('formSuccessDetails');
+
+      detailsEl.textContent = `${name}, ваша заявка в категории «${role}» зарегистрирована. Руководитель проекта Васильев Иван Андреевич свяжется с вами в ближайшее время.`;
+      successBox.classList.remove('hidden');
+      this.reset();
+    });
+  </script>
+</body>
+</html>
